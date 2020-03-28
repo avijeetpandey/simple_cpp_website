@@ -5,65 +5,78 @@ using namespace std;
 using namespace crow;
 
 
-//function to send files
 void sendFile(response &res, string filename, string contentType) {
-	ifstream getFile("public/" + filename, ifstream::in | ifstream::binary );
+	//extracting the file
+	ifstream getFile("public/" + filename, ifstream::in | ifstream::binary);
+
 	if (getFile) {
 		ostringstream contents;
-		contents << getFile.rdbuf();
+		contents << getFile.rdbuf();  //loading the contents of the file
 		getFile.close();
 		res.set_header("Content-Type", contentType);
 		res.write(contents.str());
 	}
 	else {
 		res.code = 404;
-		res.write("Internal Server error , file not found");
+		res.write("Internal server error , file not found ");
 	}
+	//end of the response 
 	res.end();
 }
 
-//function to send html
-void sendHtml(response &res, string filename) {
+void sendHTML(response &res, string filename) {
+
 	sendFile(res, filename + ".html", "text/html");
 }
 
-//helper function to send images
-void sendImage(response &res, string filename) {
-	sendFile(res, "images/" + filename, "image/jpeg");
-}
-
-//helper function to send scripts
 void sendScripts(response &res, string filename) {
 	sendFile(res, "scripts/" + filename, "text/javascript");
 }
 
-//helper function to send styles
-void sendCss(response &res, string filename) {
+void sendImage(response &res, string filename) {
+	sendFile(res, "images/" + filename, "image/jpeg");
+}
+
+void sendCSS(response &res, string filename) {
 	sendFile(res, "css/" + filename, "text/css");
 }
 
-
 int main() {
 
-	//initializing crow server 
+	//initializing the sample app
 	SimpleApp app;
+	
+	const int PORT = 3000;
+
+	//sending the files to the server
+	CROW_ROUTE(app, "/images/<string>")([](const request &req, response &res, string filename) {
+	    sendImage(res, filename);
+	});
 
 	CROW_ROUTE(app, "/css/<string>")([](const request &req, response &res, string filename) {
-		sendCss(res, filename);
+		sendCSS(res, filename);
 	});
 
 	CROW_ROUTE(app, "/scripts/<string>")([](const request &req, response &res, string filename) {
 		sendScripts(res, filename);
 	});
 
-	CROW_ROUTE(app, "/images/<string>")([](const request &req, response &res, string filename) {
-		sendImage(res, filename);
+
+	//home route
+	CROW_ROUTE(app, "/")([](const request &req, response &res) {
+		sendHTML(res,"index");
 	});
 
-	CROW_ROUTE(app, "/")([](const request &req,response &res) {
-		sendHtml(res, "index");
+	//about route
+	CROW_ROUTE(app, "/about")([](const request &req, response &res) {
+		sendHTML(res,"about");
 	});
 
-	app.port(3000).multithreaded().run();
+	//login route
+	CROW_ROUTE(app, "/login")([](const request &req, response &res) {
+		sendHTML(res,"login");
+	});
 	
+	//app listening to the port 
+	app.port(PORT).multithreaded().run();
 }

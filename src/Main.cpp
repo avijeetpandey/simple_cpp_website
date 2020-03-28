@@ -7,7 +7,7 @@ using namespace crow;
 
 //function to send files
 void sendFile(response &res, string filename, string contentType) {
-	ifstream getFile("public/" + filename, ifstream::in);
+	ifstream getFile("public/" + filename, ifstream::in | ifstream::binary );
 	if (getFile) {
 		ostringstream contents;
 		contents << getFile.rdbuf();
@@ -34,13 +34,14 @@ void sendImage(response &res, string filename) {
 
 //helper function to send scripts
 void sendScripts(response &res, string filename) {
-	sendFile(res, "js/" + filename, "text/javascript");
+	sendFile(res, "scripts/" + filename, "text/javascript");
 }
 
 //helper function to send styles
 void sendCss(response &res, string filename) {
 	sendFile(res, "css/" + filename, "text/css");
 }
+
 
 int main() {
 
@@ -51,7 +52,11 @@ int main() {
 		sendCss(res, filename);
 	});
 
-	CROW_ROUTE(app, "images/<string>")([](const request &req, response &res, string filename) {
+	CROW_ROUTE(app, "/scripts/<string>")([](const request &req, response &res, string filename) {
+		sendScripts(res, filename);
+	});
+
+	CROW_ROUTE(app, "/images/<string>")([](const request &req, response &res, string filename) {
 		sendImage(res, filename);
 	});
 

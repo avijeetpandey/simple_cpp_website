@@ -6,25 +6,26 @@ using namespace crow;
 
 int main() {
 
-	//initializing crow app
+	//initializing crow server 
 	SimpleApp app;
 
-	CROW_ROUTE(app, "/")([](const request &req, response &res) {
-		ifstream getFile("public/index.html",ifstream::in);
+	CROW_ROUTE(app, "/")([](const request &req,response &res) {
+		
+		ifstream getFile("public/index.html", ifstream::in); //finding the index.html file 
 		if (getFile) {
 			ostringstream contents;
-			contents << getFile.rdbuf();
+			contents << getFile.rdbuf(); //extracting the contents of the file 
 			getFile.close();
+			//writting the response to the server
 			res.write(contents.str());
-			res.end();
 		}
 		else {
-			res.write("Internal server error ! , File not found ");
+			res.write("Internal sever error ! File not found ");
 		}
 
+		res.end(); //ending the response from the server 
 	});
 
 	app.port(3000).multithreaded().run();
-
-	return 0;
+	
 }

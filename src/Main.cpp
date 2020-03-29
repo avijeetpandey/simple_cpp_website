@@ -1,5 +1,29 @@
 #include<iostream>
 #include<crow.h>
+#include<boost/filesystem.hpp>
+#include<cstdlib>
+#include<vector>
+#include<fstream>
+
+//bson imports 
+#include<bsoncxx/json.hpp>
+#include<bsoncxx/oid.hpp>
+#include<bsoncxx/builder/stream/document.hpp>
+
+//mongodb imports 
+#include<mongocxx/client.hpp>
+#include<mongocxx/stdx.hpp>
+#include<mongocxx/uri.hpp>
+#include<mongocxx/instance.hpp>
+
+using  bsoncxx::builder::stream::close_array;
+using  bsoncxx::builder::stream::close_document;
+using  bsoncxx::builder::stream::document;
+using  bsoncxx::builder::stream::finalize;
+using  bsoncxx::builder::stream::open_array;
+using  bsoncxx::builder::stream::open_document;
+using  bsoncxx::builder::basic::kvp;
+using  mongocxx::cursor;
 
 using namespace std;
 using namespace crow;
@@ -46,6 +70,13 @@ int main() {
 	//initializing the sample app
 	SimpleApp app;
 	
+	//connection to the database
+	mongocxx::instance inst{};
+	mongocxx::uri uri("mongodb://localhost:27017"); //connection string
+	mongocxx::client conn(uri) ;
+
+	auto collection = conn["cpp_db"]["contacts"];
+
 	const int PORT = 3000;
 
 	//sending the files to the server
@@ -62,6 +93,19 @@ int main() {
 	});
 
 
+	//contacts route
+	CROW_ROUTE(app, "/contacts")([&collection]() {
+		mongocxx::options::find opts;
+		opts.limit(2);
+		auto docs = collection.find({}, opts);
+
+		ostringstream os;
+		for (auto &&doc : docs)
+			os << bsoncxx::to_json(doc) << " \n";
+
+		return response(os.str());
+	});
+
 	//home route
 	CROW_ROUTE(app, "/")([](const request &req, response &res) {
 		sendHTML(res,"index");
@@ -77,6 +121,7 @@ int main() {
 		sendHTML(res,"login");
 	});
 	
+	cout << "The server is up and running " << endl;
 	//app listening to the port 
 	app.port(PORT).multithreaded().run();
 }
